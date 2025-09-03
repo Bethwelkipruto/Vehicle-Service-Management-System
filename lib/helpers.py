@@ -4,19 +4,26 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'db'))
 
 from db.models import Customer, Vehicle, Service
 
+
+main_options = {1: "Customers", 2: "Vehicles", 3: "Services", 0: "Exit"}
+sub_options = ["View All", "Find by ID", "Add New", "Delete", "View Related", "Back"]
+valid_choices = (1, 2, 3, 4, 5, 0)
+
 def show_menu():
-    print("\n1. Customers")
-    print("2. Vehicles")
-    print("3. Services")
-    print("0. Exit")
+    print("\nMain Menu:")
+    for key, value in main_options.items():
+        print(f"{key}. {value}")
 
 def get_choice():
     while True:
         try:
             choice = int(input("Choice: "))
-            return choice
+            if choice in valid_choices:
+                return choice
+            else:
+                print("Invalid choice, try again")
         except ValueError:
-            print("Invalid input, try again")
+            print("Please enter a number")
 
 def show_customers():
     customers = Customer.get_all()
@@ -39,25 +46,33 @@ def find_customer():
 
 def add_customer():
     try:
-        name = input("Name: ")
-        phone = input("Phone: ")
-        email = input("Email: ")
+        print("\nEnter customer details:")
+        name = input("Name (minimum 2 characters): ").strip()
+        if not name:
+            print("Name is required")
+            return
+        phone = input("Phone (optional): ").strip() or None
+        email = input("Email (optional): ").strip() or None
         Customer.create(name=name, phone=phone, email=email)
-        print("Added!")
+        print(f"✓ Customer '{name}' added successfully!")
     except ValueError as e:
         print(f"Error: {e}")
 
 def remove_customer():
     try:
-        id = int(input("Customer ID: "))
+        id = int(input("Customer ID to delete: "))
         customer = Customer.find_by_id(id)
         if customer:
-            customer.delete()
-            print("Deleted!")
+            confirm = input(f"Delete customer '{customer.name}'? (y/N): ").lower()
+            if confirm == 'y':
+                customer.delete()
+                print("✓ Customer deleted successfully!")
+            else:
+                print("Deletion cancelled")
         else:
-            print("Not found")
+            print("Customer not found")
     except ValueError:
-        print("Invalid ID")
+        print("Invalid ID format")
 
 def view_customer_vehicles():
     try:
@@ -98,12 +113,17 @@ def find_vehicle():
 
 def add_vehicle():
     try:
-        make = input("Make: ")
-        model = input("Model: ")
-        year = int(input("Year: "))
+        print("\nEnter vehicle details:")
+        make = input("Make: ").strip()
+        model = input("Model: ").strip()
+        if not make or not model:
+            print("Make and model are required")
+            return
+        year = int(input("Year (1900-2030): "))
+        license_plate = input("License plate (optional): ").strip() or None
         customer_id = int(input("Customer ID: "))
-        Vehicle.create(make=make, model=model, year=year, customer_id=customer_id)
-        print("Added!")
+        Vehicle.create(make=make, model=model, year=year, license_plate=license_plate, customer_id=customer_id)
+        print(f"✓ Vehicle '{make} {model}' added successfully!")
     except ValueError as e:
         print(f"Error: {e}")
 
@@ -159,11 +179,16 @@ def find_service():
 
 def add_service():
     try:
-        desc = input("Description: ")
-        cost = int(float(input("Cost: ")) * 100)
+        print("\nEnter service details:")
+        desc = input("Description: ").strip()
+        if not desc:
+            print("Description is required")
+            return
+        cost_input = input("Cost (optional, enter 0 for free): ").strip()
+        cost = int(float(cost_input) * 100) if cost_input else 0
         vehicle_id = int(input("Vehicle ID: "))
         Service.create(description=desc, cost=cost, vehicle_id=vehicle_id)
-        print("Added!")
+        print(f"✓ Service '{desc}' added successfully!")
     except ValueError as e:
         print(f"Error: {e}")
 
@@ -195,69 +220,86 @@ def view_service_vehicle():
         print("Invalid ID")
 
 def customer_menu():
+    menu_actions = {
+        1: show_customers,
+        2: find_customer, 
+        3: add_customer,
+        4: remove_customer,
+        5: view_customer_vehicles
+    }
+    
     while True:
         print("\nCustomer Menu:")
-        print("1. View All")
-        print("2. Find by ID")
-        print("3. Add New")
-        print("4. Delete")
-        print("5. View Vehicles")
-        print("0. Back")
-        c = get_choice()
-        if c == 1: show_customers()
-        elif c == 2: find_customer()
-        elif c == 3: add_customer()
-        elif c == 4: remove_customer()
-        elif c == 5: view_customer_vehicles()
-        elif c == 0: break
-        else: print("Invalid choice")
+        for i, option in enumerate(sub_options):
+            print(f"{i+1 if i < 5 else 0}. {option}")
+        
+        choice = get_choice()
+        if choice == 0:
+            break
+        elif choice in menu_actions:
+            menu_actions[choice]()
+        else:
+            print("Invalid choice")
 
 def vehicle_menu():
+    menu_actions = {
+        1: show_vehicles,
+        2: find_vehicle,
+        3: add_vehicle, 
+        4: remove_vehicle,
+        5: view_vehicle_services
+    }
+    
     while True:
         print("\nVehicle Menu:")
-        print("1. View All")
-        print("2. Find by ID")
-        print("3. Add New")
-        print("4. Delete")
-        print("5. View Services")
-        print("0. Back")
-        c = get_choice()
-        if c == 1: show_vehicles()
-        elif c == 2: find_vehicle()
-        elif c == 3: add_vehicle()
-        elif c == 4: remove_vehicle()
-        elif c == 5: view_vehicle_services()
-        elif c == 0: break
-        else: print("Invalid choice")
+        for i, option in enumerate(sub_options):
+            print(f"{i+1 if i < 5 else 0}. {option}")
+        
+        choice = get_choice()
+        if choice == 0:
+            break
+        elif choice in menu_actions:
+            menu_actions[choice]()
+        else:
+            print("Invalid choice")
 
 def service_menu():
+    menu_actions = {
+        1: show_services,
+        2: find_service,
+        3: add_service,
+        4: remove_service, 
+        5: view_service_vehicle
+    }
+    
     while True:
         print("\nService Menu:")
-        print("1. View All")
-        print("2. Find by ID")
-        print("3. Add New")
-        print("4. Delete")
-        print("5. View Vehicle")
-        print("0. Back")
-        c = get_choice()
-        if c == 1: show_services()
-        elif c == 2: find_service()
-        elif c == 3: add_service()
-        elif c == 4: remove_service()
-        elif c == 5: view_service_vehicle()
-        elif c == 0: break
-        else: print("Invalid choice")
+        for i, option in enumerate(sub_options):
+            print(f"{i+1 if i < 5 else 0}. {option}")
+        
+        choice = get_choice()
+        if choice == 0:
+            break
+        elif choice in menu_actions:
+            menu_actions[choice]()
+        else:
+            print("Invalid choice")
 
 def run():
+    main_actions = {
+        1: customer_menu,
+        2: vehicle_menu,
+        3: service_menu
+    }
+    
     while True:
         show_menu()
         choice = get_choice()
         
-        if choice == 1:
-            customer_menu()
-        elif choice == 2:
-            vehicle_menu()
-        elif choice == 3:
-            service_menu()
-        elif choice == 0:
+        if choice == 0:
+            print("Thank you for using Vehicle Service Management System!")
             break
+        elif choice in main_actions:
+            main_actions[choice]()
+        else:
+            print("Invalid choice, please try again")

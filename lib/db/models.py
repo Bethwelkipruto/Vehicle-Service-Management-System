@@ -24,13 +24,14 @@ class Customer(Base):
     
     @classmethod
     def create(cls, name, phone=None, email=None):
-        
         session = Session()
         customer = cls(name=name, phone=phone, email=email)
         session.add(customer)
         session.commit()
+        session.refresh(customer)  
+        customer_id = customer.id
         session.close()
-        return customer
+        return cls.find_by_id(customer_id)  
     
     @classmethod
     def get_all(cls):
@@ -80,8 +81,10 @@ class Vehicle(Base):
         vehicle = cls(make=make, model=model, year=year, license_plate=license_plate, customer_id=customer_id)
         session.add(vehicle)
         session.commit()
+        session.refresh(vehicle)
+        vehicle_id = vehicle.id
         session.close()
-        return vehicle
+        return cls.find_by_id(vehicle_id)
     
     @classmethod
     def get_all(cls):
@@ -127,8 +130,10 @@ class Service(Base):
         service = cls(description=description, cost=cost, vehicle_id=vehicle_id)
         session.add(service)
         session.commit()
+        session.refresh(service)
+        service_id = service.id
         session.close()
-        return service
+        return cls.find_by_id(service_id)
     
     @classmethod
     def get_all(cls):

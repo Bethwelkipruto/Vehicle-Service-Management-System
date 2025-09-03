@@ -1,29 +1,76 @@
 from models import Base, Customer, Vehicle, Service, engine, Session
+from faker import Faker
+import random
+
+fake = Faker()
 
 def seed():
     Base.metadata.create_all(engine)
     session = Session()
     
     session.query(Service).delete()
-    session.query(Vehicle).delete()
+    session.query(Vehicle).delete() 
     session.query(Customer).delete()
     
-    c1 = Customer(name="John", phone="123", email="john@test.com")
-    c2 = Customer(name="Jane", phone="456", email="jane@test.com")
-    session.add_all([c1, c2])
+    customers = []
+    for i in range(5):
+        customer = Customer(
+            name=fake.name(),
+            phone=fake.phone_number(),
+            email=fake.email()
+        )
+        customers.append(customer)
+    
+    session.add_all(customers)
     session.commit()
     
-    v1 = Vehicle(make="Toyota", model="Camry", year=2020, customer_id=1)
-    v2 = Vehicle(make="Honda", model="Civic", year=2019, customer_id=2)
-    session.add_all([v1, v2])
+    makes_models = [
+        ("Toyota", ["Camry", "Corolla", "Prius", "RAV4"]),
+        ("Honda", ["Civic", "Accord", "CR-V", "Pilot"]),
+        ("Ford", ["F-150", "Escape", "Mustang", "Explorer"]),
+        ("Chevrolet", ["Silverado", "Equinox", "Malibu", "Tahoe"])
+    ]
+    
+    vehicles = []
+    for customer in customers:
+        for j in range(random.randint(1, 3)):
+            make, models = random.choice(makes_models)
+            vehicle = Vehicle(
+                make=make,
+                model=random.choice(models),
+                year=random.randint(2015, 2024),
+                license_plate=fake.license_plate(),
+                customer_id=customer.id
+            )
+            vehicles.append(vehicle)
+    
+    session.add_all(vehicles)
     session.commit()
     
-    s1 = Service(description="Oil Change", cost=3500, vehicle_id=1)
-    s2 = Service(description="Brake Check", cost=8000, vehicle_id=2)
-    session.add_all([s1, s2])
+    service_list = [
+        ("Oil Change", 3500, 5500),
+        ("Brake Inspection", 8000, 12000),
+        ("Tire Rotation", 2500, 4000),
+        ("Battery Replacement", 15000, 25000),
+        ("Air Filter Replacement", 2000, 3500),
+        ("Transmission Service", 20000, 35000)
+    ]
+    
+    services = []
+    for vehicle in vehicles:
+        for k in range(random.randint(1, 4)):
+            service_type, min_cost, max_cost = random.choice(service_list)
+            service = Service(
+                description=service_type,
+                cost=random.randint(min_cost, max_cost),
+                vehicle_id=vehicle.id
+            )
+            services.append(service)
+    
+    session.add_all(services)
     session.commit()
     
-    print("Done!")
+    print(f"Created {len(customers)} customers, {len(vehicles)} vehicles, {len(services)} services")
     session.close()
 
 if __name__ == "__main__":
